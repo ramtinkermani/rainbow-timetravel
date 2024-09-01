@@ -1,10 +1,7 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
-	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rainbowmga/timetravel/api"
-	"github.com/rainbowmga/timetravel/service"
 	"github.com/rainbowmga/timetravel/storageServices"
 )
 
@@ -23,58 +19,17 @@ func logError(err error) {
 	}
 }
 
-func initDB() (*sql.DB, error) {
-    db, err := sql.Open("sqlite3", "./data/data.db")
-    if err != nil {
-        return nil, err
-    }
 
-    createTableQuery := `
-    CREATE TABLE IF NOT EXISTS CustomerData (
-        id INTEGER PRIMARY KEY,
-        data TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT NULL
-    );`
-
-    _, err = db.Exec(createTableQuery)
-    if err != nil {
-        return nil, err
-    }
-
-    return db, nil
-}
-
-func getStorageType() string{
-
-	storageType := flag.String( "storage_type", "sqlite", "Options are: ['sqlite', 'memory']" )
-	flag.Parse()
-	if *storageType != "memory" && *storageType != "sqlite"{
-		log.Fatalf("Invalid Storage Type. Options are: ['sqlite', 'memory']")
-	}
-	
-	fmt.Printf("Selected Storage type is %s", *storageType)
-	return *storageType
-}
 
 func main() {
-
 	// Get preferred storage type from user through CLI args or use default
-	storageType := getStorageType()
+	storageType := storageServices.GetStorageType()
 
 	// Based on the storage type choice, create the right storage service
-	var storageService service.RecordService
-	if storageType == "sqlite"{
-		db, err := initDB()
-		if err != nil {
-			log.Fatal((err))
-		}
+	storageService, db := storageServices.BuildStorageService(storageType)
+	// If db is not nil, defer its closure
+	if db != nil {
 		defer db.Close()
-
-		storageService = storageServices.NewSqliteRecordService(db)
-	} else
-	{
-		storageService = service.NewInMemoryRecordService()
 	}
 
 	router := mux.NewRouter()

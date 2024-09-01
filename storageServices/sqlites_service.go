@@ -10,6 +10,28 @@ import (
 	"github.com/rainbowmga/timetravel/service"
 )
 
+func initDB() (*sql.DB, error) {
+    db, err := sql.Open("sqlite3", "./data/data.db")
+    if err != nil {
+        return nil, err
+    }
+
+    createTableQuery := `
+    CREATE TABLE IF NOT EXISTS CustomerData (
+        id INTEGER PRIMARY KEY,
+        data TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT NULL
+    );`
+
+    _, err = db.Exec(createTableQuery)
+    if err != nil {
+        return nil, err
+    }
+
+    return db, nil
+}
+
 type SqliteRecordService struct {
 	db *sql.DB
 }

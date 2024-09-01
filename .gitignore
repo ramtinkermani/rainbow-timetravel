@@ -1,3 +1,4 @@
 .vscode/
 data.db
 timetravel
+__debug*
