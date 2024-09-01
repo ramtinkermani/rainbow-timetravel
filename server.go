@@ -24,7 +24,7 @@ func logError(err error) {
 }
 
 func initDB() (*sql.DB, error) {
-    db, err := sql.Open("sqlite3", "./data.db")
+    db, err := sql.Open("sqlite3", "./data/data.db")
     if err != nil {
         return nil, err
     }
