@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,6 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rainbowmga/timetravel/api"
 	"github.com/rainbowmga/timetravel/service"
+	"github.com/rainbowmga/timetravel/storageServices"
 )
 
 // logError logs all non-nil errors
@@ -42,18 +45,41 @@ func initDB() (*sql.DB, error) {
     return db, nil
 }
 
-func main() {
-	db, err := initDB()
-	if err != nil {
-		log.Fatal((err))
+func getStorageType() string{
+
+	storageType := flag.String( "storage_type", "sqlite", "Options are: ['sqlite', 'memory']" )
+	flag.Parse()
+	if *storageType != "memory" && *storageType != "sqlite"{
+		log.Fatalf("Invalid Storage Type. Options are: ['sqlite', 'memory']")
 	}
-	defer db.Close()
+	
+	fmt.Printf("Selected Storage type is %s", *storageType)
+	return *storageType
+}
+
+func main() {
+
+	// Get preferred storage type from user through CLI args or use default
+	storageType := getStorageType()
+
+	// Based on the storage type choice, create the right storage service
+	var storageService service.RecordService
+	if storageType == "sqlite"{
+		db, err := initDB()
+		if err != nil {
+			log.Fatal((err))
+		}
+		defer db.Close()
+
+		storageService = storageServices.NewSqliteRecordService(db)
+	} else
+	{
+		storageService = service.NewInMemoryRecordService()
+	}
 
 	router := mux.NewRouter()
 
-	// service := service.NewInMemoryRecordService()
-	service := service.NewSqliteRecordService(db)
-	api := api.NewAPI(&service)
+	api := api.NewAPI(storageService)
 
 	apiRoute := router.PathPrefix("/api/v1").Subrouter()
 	apiRoute.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +91,7 @@ func main() {
 	// Setting up routes for API version 2
 	apiV2Route := router.PathPrefix("/api/v2").Subrouter()
 	apiV2Route.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := json.NewEncoder(w).Encode(map[string]bool{"okkkk": true})
+		err := json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 		logError(err)
 	})
 
