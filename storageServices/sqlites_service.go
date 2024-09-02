@@ -10,6 +10,8 @@ import (
 	"github.com/rainbowmga/timetravel/service"
 )
 
+var tableName string = "CustomerData"
+
 func initDB() (*sql.DB, error) {
     db, err := sql.Open("sqlite3", "./data/data.db")
     if err != nil {
@@ -47,15 +49,16 @@ func (sqlsvc *SqliteRecordService) GetRecord(ctx context.Context, id int) (entit
 	var record entity.Record
     var dataJSON string
 
-    _ = sqlsvc.db.QueryRow("SELECT id, data FROM CustomerData WHERE id = ?", id).Scan(&record.ID, &dataJSON)
+	query := fmt.Sprintf("SELECT id, data FROM %s WHERE id = ?", tableName)
+    _ = sqlsvc.db.QueryRow(query, id).Scan(&record.ID, &dataJSON)
 	if record.ID == 0 {
 		return entity.Record{}, service.ErrRecordDoesNotExist
 	}
 
-    _ = json.Unmarshal([]byte(dataJSON), &record.Data)
-    // if err != nil {
-    //     return nil, err
-    // }
+    err := json.Unmarshal([]byte(dataJSON), &record.Data)
+    if err != nil {
+        return entity.Record{}, err
+    }
 
 	record = record.Copy() // copy is necessary so modifations to the record don't change the stored record
 	return record, nil
@@ -79,11 +82,33 @@ func (sqlsvc *SqliteRecordService) CreateRecord(ctx context.Context, record enti
         return err
     }
 
-    _, err = sqlsvc.db.Exec("INSERT INTO CustomerData (id, data) VALUES (?, ?)", id, string(dataJSON))
+	query := fmt.Sprintf("INSERT INTO %s (id, data) VALUES (?, ?)", tableName)
+    _, err = sqlsvc.db.Exec(query, id, string(dataJSON))
     return err
 }
 
 func (sqlsvc *SqliteRecordService) UpdateRecord(ctx context.Context, id int, updates map[string]*string) (entity.Record, error) {
-	fmt.Println("UpdateRecord")
-	return entity.Record{}, nil
+	entry, _ := sqlsvc.GetRecord(ctx, id)
+	
+	if entry.ID == 0 {
+		return entity.Record{}, service.ErrRecordDoesNotExist
+	}
+
+	for key, value := range updates {
+		if value == nil { // deletion update
+			delete(entry.Data, key)
+		} else {
+			entry.Data[key] = *value
+		}
+	}
+
+	dataJSON, err := json.Marshal(entry.Data)
+    if err != nil {
+        return entity.Record{},nil
+    }
+
+	query := fmt.Sprintf("UPDATE %s SET data=? WHERE id=?", tableName)
+    _, err = sqlsvc.db.Exec(query, string(dataJSON), id)
+
+	return entity.Record{},nil
 }

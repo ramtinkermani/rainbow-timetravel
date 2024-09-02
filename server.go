@@ -19,14 +19,13 @@ func logError(err error) {
 	}
 }
 
-
-
 func main() {
 	// Get preferred storage type from user through CLI args or use default
 	storageType := storageServices.GetStorageType()
 
 	// Based on the storage type choice, create the right storage service
 	storageService, db := storageServices.BuildStorageService(storageType)
+	
 	// If db is not nil, defer its closure
 	if db != nil {
 		defer db.Close()
