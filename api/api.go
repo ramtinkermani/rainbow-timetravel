@@ -15,6 +15,7 @@ func NewAPI(records service.RecordService) *API {
 
 // generates all api routes
 func (a *API) CreateRoutes(routes *mux.Router) {
+	routes.Path("/records/{id}/all").HandlerFunc(a.GetRecordVersions).Methods("GET")
 	routes.Path("/records/{id}").HandlerFunc(a.GetRecords).Methods("GET")
 	routes.Path("/records/{id}").HandlerFunc(a.PostRecords).Methods("POST")
 }

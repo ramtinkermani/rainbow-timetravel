@@ -46,6 +46,65 @@ func NewSqliteRecordService(db *sql.DB) *SqliteRecordService {
 	}
 }
 
+
+func (sqlsvc *SqliteRecordService) GetRecordVersions(ctx context.Context, id int) ([]entity.Record, error) {
+	fmt.Println("Getting All versions")
+	var records []entity.Record
+
+	query := fmt.Sprintf("SELECT _id, id, data, updates, created_date, effective_date FROM %s WHERE id = ? ORDER BY _id DESC", tableName)
+
+	rows, err := sqlsvc.db.Query(query, id)
+	if err != nil {
+		return []entity.Record{}, err
+	}
+	defer rows.Close()
+
+
+	// Iterate over the result set and scan each row into a Record struct
+	for rows.Next() {
+		var record entity.Record
+		var dataJSON sql.NullString
+		var updatesJSON sql.NullString
+
+		err := rows.Scan(&record.I_id, &record.ID, &dataJSON, &updatesJSON, &record.CreatedDate, &record.EffectiveDate)
+		if err != nil {
+			return []entity.Record{}, err
+		}
+
+		// Unmarshal the JSON data into the Record's Data field
+		if dataJSON.Valid{
+			err = json.Unmarshal([]byte(dataJSON.String), &record.Data)
+			if err != nil {
+				return []entity.Record{}, err
+			}
+		}
+
+		// Same for the Updates 
+		if updatesJSON.Valid {
+			err = json.Unmarshal([]byte(updatesJSON.String), &record.Updates)
+			if err != nil {
+				return []entity.Record{}, err
+			}
+		}
+
+		record = record.Copy()
+
+		records = append(records, record)
+	}
+
+	if err = rows.Err(); err != nil {
+		return []entity.Record{}, err
+	}
+
+	if len(records) == 0 {
+		return []entity.Record{}, service.ErrRecordDoesNotExist
+	}
+
+	// Return the slice of records
+	return records, nil
+
+}
+
 func (sqlsvc *SqliteRecordService) GetRecord(ctx context.Context, id int) (entity.Record, error) {
 	fmt.Println("GetRecord")
 	var record entity.Record

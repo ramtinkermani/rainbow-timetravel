@@ -2,6 +2,7 @@ package storageServices
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rainbowmga/timetravel/entity"
 	"github.com/rainbowmga/timetravel/service"
@@ -16,6 +17,11 @@ func NewInMemoryRecordService() *InMemoryRecordService {
 	return &InMemoryRecordService{
 		data: map[int]entity.Record{},
 	}
+}
+
+func (sqlsvc *InMemoryRecordService) GetRecordVersions(ctx context.Context, id int) ([]entity.Record, error) {
+	fmt.Println("Getting All versions")
+	return []entity.Record{}, nil
 }
 
 func (s *InMemoryRecordService) GetRecord(ctx context.Context, id int) (entity.Record, error) {
