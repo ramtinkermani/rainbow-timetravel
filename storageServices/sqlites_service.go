@@ -20,10 +20,12 @@ func initDB() (*sql.DB, error) {
 
     createTableQuery := `
     CREATE TABLE IF NOT EXISTS CustomerData (
-        id INTEGER PRIMARY KEY,
+        _id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER,
         data TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT NULL
+		updates text,
+		effective_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
 
     _, err = db.Exec(createTableQuery)
@@ -49,8 +51,10 @@ func (sqlsvc *SqliteRecordService) GetRecord(ctx context.Context, id int) (entit
 	var record entity.Record
     var dataJSON string
 
-	query := fmt.Sprintf("SELECT id, data FROM %s WHERE id = ?", tableName)
-    _ = sqlsvc.db.QueryRow(query, id).Scan(&record.ID, &dataJSON)
+	// Get the latest version of the data from the DB
+	query := fmt.Sprintf("SELECT id, data, created_date, effective_date FROM %s WHERE id = ? order by _id desc limit 1", tableName)
+    _ = sqlsvc.db.QueryRow(query, id).Scan(&record.ID, &dataJSON, record.EffectiveDate, record.CreatedDate)
+
 	if record.ID == 0 {
 		return entity.Record{}, service.ErrRecordDoesNotExist
 	}
@@ -89,7 +93,7 @@ func (sqlsvc *SqliteRecordService) CreateRecord(ctx context.Context, record enti
 
 func (sqlsvc *SqliteRecordService) UpdateRecord(ctx context.Context, id int, updates map[string]*string) (entity.Record, error) {
 	entry, _ := sqlsvc.GetRecord(ctx, id)
-	
+
 	if entry.ID == 0 {
 		return entity.Record{}, service.ErrRecordDoesNotExist
 	}
@@ -102,13 +106,19 @@ func (sqlsvc *SqliteRecordService) UpdateRecord(ctx context.Context, id int, upd
 		}
 	}
 
-	dataJSON, err := json.Marshal(entry.Data)
-    if err != nil {
+	dataJSON, err_data := json.Marshal(entry.Data)
+	updatesJSON, err_updates := json.Marshal(updates)
+
+    if err_data != nil || err_updates != nil {
         return entity.Record{},nil
     }
 
-	query := fmt.Sprintf("UPDATE %s SET data=? WHERE id=?", tableName)
-    _, err = sqlsvc.db.Exec(query, string(dataJSON), id)
+	var err error
+	// Eventhough this is an Update, since we now have versioning,
+	// we insert a new row with the same ID as well as the update 
+	// that 'updated' this version
+	query := fmt.Sprintf("INSERT INTO %s (id, data, updates) VALUES (?, ?, ?)", tableName)
+    _, err = sqlsvc.db.Exec(query, id, string(dataJSON), string(updatesJSON))
 
-	return entity.Record{},nil
+	return entity.Record{}, err
 }
