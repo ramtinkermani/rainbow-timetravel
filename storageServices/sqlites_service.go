@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/rainbowmga/timetravel/contexthelpers"
 	"github.com/rainbowmga/timetravel/entity"
 	"github.com/rainbowmga/timetravel/service"
 )
@@ -153,6 +155,21 @@ func (sqlsvc *SqliteRecordService) CreateRecord(ctx context.Context, record enti
 func (sqlsvc *SqliteRecordService) UpdateRecord(ctx context.Context, id int, updates map[string]*string) (entity.Record, error) {
 	entry, _ := sqlsvc.GetRecord(ctx, id)
 
+	// Retrieve the effectiveDate from the context
+	effective_date_str, ok := ctx.Value(contexthelpers.EffectiveDateKey).(string)
+
+	var effectiveDate string
+	if ok{
+		// Parse the date string into a time.Time object
+		effective_date_parsed, err := time.Parse("2006-01-02", effective_date_str)
+		if err != nil {
+			effectiveDate = time.Now().UTC().Format("2006-01-02 15:04:05")
+		} else {
+			// Format the date as a string suitable for SQLite (SQLite uses ISO8601 format for datetime)
+			effectiveDate = effective_date_parsed.Format("2006-01-02 15:04:05")
+		}
+	}
+
 	if entry.ID == 0 {
 		return entity.Record{}, service.ErrRecordDoesNotExist
 	}
@@ -169,15 +186,15 @@ func (sqlsvc *SqliteRecordService) UpdateRecord(ctx context.Context, id int, upd
 	updatesJSON, err_updates := json.Marshal(updates)
 
     if err_data != nil || err_updates != nil {
-        return entity.Record{},nil
+        return entity.Record{}, nil
     }
 
 	var err error
 	// Eventhough this is an Update, since we now have versioning,
 	// we insert a new row with the same ID as well as the update 
 	// that 'updated' this version
-	query := fmt.Sprintf("INSERT INTO %s (id, data, updates) VALUES (?, ?, ?)", tableName)
-    _, err = sqlsvc.db.Exec(query, id, string(dataJSON), string(updatesJSON))
+	query := fmt.Sprintf("INSERT INTO %s (id, data, updates, effective_date) VALUES (?, ?, ?, ?)", tableName)
+    _, err = sqlsvc.db.Exec(query, id, string(dataJSON), string(updatesJSON), effectiveDate)
 
 	return entity.Record{}, err
 }

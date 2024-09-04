@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/rainbowmga/timetravel/contexthelpers"
 	"github.com/rainbowmga/timetravel/entity"
 	"github.com/rainbowmga/timetravel/service"
 )
@@ -17,6 +19,7 @@ import (
 func (a *API) PostRecords(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := mux.Vars(r)["id"]
+
 	idNumber, err := strconv.ParseInt(id, 10, 32)
 
 	if err != nil || idNumber <= 0 {
@@ -41,6 +44,14 @@ func (a *API) PostRecords(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if !errors.Is(err, service.ErrRecordDoesNotExist) { // record exists
+		// This is an Update request (Ideally should be a PUT, but we use POST),
+		// try to get the effective date for the update (if any provided) (e.g 4 months ago change happened)
+		queryParams := r.URL.Query()
+		effective_date := queryParams.Get("effective_date")
+
+		// Use Context to pass this value along to the UpdateRecord()
+		ctx = context.WithValue(ctx, contexthelpers.EffectiveDateKey, effective_date)
+
 		record, err = a.records.UpdateRecord(ctx, int(idNumber), body)
 	} else { // record does not exist
 
