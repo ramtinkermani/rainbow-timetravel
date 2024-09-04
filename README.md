@@ -112,6 +112,227 @@ The payload is a json object mapping strings to strings and nulls. Values that a
 
 - Add V2 Routes
 
-- Add and initialize a Sqlite Table
+- Add and initialize a Sqlite Conection and create the table
 
 - Create methods based on the RecordService Interface for the DatabaseService
+
+- Add basic record versioning
+
+- Add endpoint to retrieve all versions of a record
+
+- Add Effective Date as a URL Query parameter
+
+- Refactoring
+
+### Exndpoints:
+
+```
+# Create a new Record
+POST http://127.0.0.1:8000/api/v2/records/123
+BODY:
+{
+    "name": "Ramtin"
+}
+```
+
+```
+# Get the latest version of a Record
+GET http://127.0.0.1:8000/api/v2/records/123
+Response:
+{
+    "name": "Ramtin"
+}
+```
+
+```
+# Update a new Record (If record id exists, will update)
+# To be truely RESTful, it's better to use a PUT instead and change the logic
+POST http://127.0.0.1:8000/api/v2/records/123
+BODY:
+{
+    "City": "San Francisco",
+    "zipcode": "94123"
+}
+```
+
+```
+# Update a new Record, but for a specific effective date
+POST http://127.0.0.1:8000/api/v2/records/123?effective_date=2023-10-19
+BODY:
+{
+    "City": "New York",
+    "zipcode": null
+}
+```
+
+```
+# Get All versions of a record
+GET http://127.0.0.1:8000/api/v2/records/123
+```
+
+You can see that this returns most properties (columns) of each version of a record.
+
+- **\_id**: Different than a record ID. Simply an auto incrementing primary key to enable storing various versions of a record, also used as a sort key.
+- **id**: The ID of the record, which stays the same for all versions
+- **data**: Contains the current state of the record after the updates were applied
+- **updates**: Contains the JSON that led to this change.
+- **created_date**: Refers to the creation date of this version of the record.
+- **effective_date**: Is set by the user when sending an update request. This is provided if the date of the actual event (Change of address) is different than the current time (e.g. Address changed 4 months ago). If **effective_date** is not passed by the API caller, current time is used.
+- The result is a list of all the versions of the record, sorted by the **\_id**
+
+This response is longer, so putting it in a new code block. Here is an example. 10 different updates were applied to this record which results in these versions:
+
+```JSON
+[
+    {
+        "_id": 10,
+        "id": 123,
+        "data": {
+            "Country": "Italy",
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Arizona"
+        },
+        "updates": {
+            "Country": "Italy",
+            "state": "Arizona"
+        },
+        "effective_date": "2024-09-04T01:22:31Z",
+        "created_date": "2024-09-04T01:22:31Z"
+    },
+    {
+        "_id": 9,
+        "id": 123,
+        "data": {
+            "Country": "Japan",
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Arizona"
+        },
+        "updates": {
+            "Country": "Japan",
+            "state": "Arizona"
+        },
+        "effective_date": "2024-09-04T01:20:20Z",
+        "created_date": "2024-09-04T01:20:21Z"
+    },
+    {
+        "_id": 8,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Alabama"
+        },
+        "updates": {
+            "state": "Alabama"
+        },
+        "effective_date": "2024-09-03T18:08:52Z",
+        "created_date": "2024-09-04T01:16:39Z"
+    },
+    {
+        "_id": 7,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Georgia"
+        },
+        "updates": {
+            "state": "Georgia"
+        },
+        "effective_date": "2024-09-03T18:08:52Z",
+        "created_date": "2024-09-04T01:08:53Z"
+    },
+    {
+        "_id": 6,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Washington"
+        },
+        "updates": {
+            "state": "Washington"
+        },
+        "effective_date": "0001-01-01T00:00:00Z",
+        "created_date": "2024-09-04T01:07:00Z"
+    },
+    {
+        "_id": 5,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Martin",
+            "state": "Nevada"
+        },
+        "updates": {
+            "name": "Martin",
+            "state": "Nevada"
+        },
+        "effective_date": "2018-12-18T00:00:00Z",
+        "created_date": "2024-09-04T01:05:32Z"
+    },
+    {
+        "_id": 4,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Ramtin"
+        },
+        "updates": {
+            "state": ""
+        },
+        "effective_date": "2024-09-03T16:29:33Z",
+        "created_date": "2024-09-03T16:29:33Z"
+    },
+    {
+        "_id": 3,
+        "id": 123,
+        "data": {
+            "age": "40",
+            "city": "New York",
+            "name": "Ramtin",
+            "state": "What"
+        },
+        "updates": {
+            "age": "40",
+            "state": "What"
+        },
+        "effective_date": "2024-09-03T16:29:20Z",
+        "created_date": "2024-09-03T16:29:20Z"
+    },
+    {
+        "_id": 2,
+        "id": 123,
+        "data": {
+            "age": "36",
+            "city": "New York",
+            "name": "Ramtin"
+        },
+        "updates": {
+            "age": "36",
+            "city": "New York"
+        },
+        "effective_date": "2024-09-03T16:28:44Z",
+        "created_date": "2024-09-03T16:28:44Z"
+    },
+    {
+        "_id": 1,
+        "id": 123,
+        "data": {
+            "name": "Ramtin"
+        },
+        "updates": {},
+        "effective_date": "2024-09-03T16:28:29Z",
+        "created_date": "2024-09-03T16:28:29Z"
+    }
+]
+```
