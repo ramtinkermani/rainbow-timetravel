@@ -185,154 +185,49 @@ This response is longer, so putting it in a new code block. Here is an example. 
 ```JSON
 [
     {
-        "_id": 10,
-        "id": 123,
-        "data": {
-            "Country": "Italy",
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Arizona"
-        },
-        "updates": {
-            "Country": "Italy",
-            "state": "Arizona"
-        },
-        "effective_date": "2024-09-04T01:22:31Z",
-        "created_date": "2024-09-04T01:22:31Z"
-    },
-    {
-        "_id": 9,
-        "id": 123,
-        "data": {
-            "Country": "Japan",
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Arizona"
-        },
-        "updates": {
-            "Country": "Japan",
-            "state": "Arizona"
-        },
-        "effective_date": "2024-09-04T01:20:20Z",
-        "created_date": "2024-09-04T01:20:21Z"
-    },
-    {
-        "_id": 8,
-        "id": 123,
-        "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Alabama"
-        },
-        "updates": {
-            "state": "Alabama"
-        },
-        "effective_date": "2024-09-03T18:08:52Z",
-        "created_date": "2024-09-04T01:16:39Z"
-    },
-    {
-        "_id": 7,
-        "id": 123,
-        "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Georgia"
-        },
-        "updates": {
-            "state": "Georgia"
-        },
-        "effective_date": "2024-09-03T18:08:52Z",
-        "created_date": "2024-09-04T01:08:53Z"
-    },
-    {
-        "_id": 6,
-        "id": 123,
-        "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Washington"
-        },
-        "updates": {
-            "state": "Washington"
-        },
-        "effective_date": "0001-01-01T00:00:00Z",
-        "created_date": "2024-09-04T01:07:00Z"
-    },
-    {
-        "_id": 5,
-        "id": 123,
-        "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Martin",
-            "state": "Nevada"
-        },
-        "updates": {
-            "name": "Martin",
-            "state": "Nevada"
-        },
-        "effective_date": "2018-12-18T00:00:00Z",
-        "created_date": "2024-09-04T01:05:32Z"
-    },
-    {
-        "_id": 4,
-        "id": 123,
-        "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Ramtin"
-        },
-        "updates": {
-            "state": ""
-        },
-        "effective_date": "2024-09-03T16:29:33Z",
-        "created_date": "2024-09-03T16:29:33Z"
-    },
-    {
+        // POST to Update Record with an older effective_date
         "_id": 3,
-        "id": 123,
+        "id": 12345,
         "data": {
-            "age": "40",
-            "city": "New York",
-            "name": "Ramtin",
-            "state": "What"
+            "Country": "USA",
+            "firstame": "Ramtin",
+            "lastname": "Kermani",
+            "state": "California"
         },
         "updates": {
-            "age": "40",
-            "state": "What"
+            "state": "California"
         },
-        "effective_date": "2024-09-03T16:29:20Z",
-        "created_date": "2024-09-03T16:29:20Z"
+        "effective_date": "2013-09-01T00:00:00Z",
+        "created_date": "2024-09-04T01:53:56Z"
     },
     {
+        // POST to Update Record
         "_id": 2,
-        "id": 123,
+        "id": 12345,
         "data": {
-            "age": "36",
-            "city": "New York",
-            "name": "Ramtin"
+            "Country": "USA",
+            "firstame": "Ramtin",
+            "lastname": "Kermani",
+            "state": "Arizona"
         },
         "updates": {
-            "age": "36",
-            "city": "New York"
+            "Country": "USA",
+            "state": "Arizona"
         },
-        "effective_date": "2024-09-03T16:28:44Z",
-        "created_date": "2024-09-03T16:28:44Z"
+        "effective_date": "2024-09-04T01:52:35Z",
+        "created_date": "2024-09-04T01:52:38Z"
     },
     {
+        // POST to Create Record
         "_id": 1,
-        "id": 123,
+        "id": 12345,
         "data": {
-            "name": "Ramtin"
+            "firstame": "Ramtin",
+            "lastname": "Kermani"
         },
         "updates": {},
-        "effective_date": "2024-09-03T16:28:29Z",
-        "created_date": "2024-09-03T16:28:29Z"
+        "effective_date": "2024-09-04T01:52:07Z",
+        "created_date": "2024-09-04T01:52:07Z"
     }
 ]
 ```
